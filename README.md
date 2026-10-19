@@ -46,14 +46,22 @@ Lalu buka `http://<IP-LAN>:3000/` di HP.
 
 ## Deploy ke Cloud (akses dari mana saja)
 
-### Render.com (free, support WebSocket)
-1. Fork/push repo ke GitHub (sudah ada di `github.com/adityapu17/anydesk-clone`)
-2. Daftar di [render.com](https://render.com) → **New Web Service**
-3. Pilih repo → pilih branch `main` → **Create Web Service**
-4. Render akan deploy otomatis & kasih URL seperti `https://anydesk-clone.onrender.com`
+### Cloudflare (free, support WebSocket via Workers + Durable Objects)
+1. Daftar gratis [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages**
+2. **Create Application** → **Worker** → **GitHub** → pilih repo `adityapu17/anydesk-clone`
+3. Build command: (kosong), Output directory: (kosong)
+4. **Deploy** → dapat URL seperti `https://anydesk-clone.<account>.workers.dev`
 5. Buka URL di HP/PC browser!
 
-Config otomatis ada di `render.yaml`.
+Config otomatis ada di `wrangler.toml`:
+- `src/worker.js` — entry point (static files + WS routing)
+- `src/signaling-do.js` — Durable Object (session signaling)
+- `[[durable_objects]]` binding di wrangler.toml
+
+### Render.com (alternatif, free, support WebSocket)
+1. Daftar [render.com](https://render.com) → **New Web Service**
+2. Pilih repo `adityapu17/anydesk-clone` → branch `main`
+3. Render baca `render.yaml` otomatis → deploy → URL public
 
 ## File
 
