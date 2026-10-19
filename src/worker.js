@@ -169,11 +169,11 @@ const hostHTML = `<!DOCTYPE html>
   <div class="info">
     Host: desktop browser (Chrome/Firefox/Edge). Viewer: bisa pakai Android/iOS.
     This session has <strong>no timeout</strong> — it stays alive until you stop sharing.</div>
-  </div>
+      </div>
 
-<script src="/app.js"></script>
-</body>
-</html>`;
+    <script src="/app.js?v=2"></script>
+    </body>
+    </html>`;
 
 const clientHTML = `<!DOCTYPE html>
 <html lang="en">
@@ -242,9 +242,9 @@ const clientHTML = `<!DOCTYPE html>
 
   <div class="placeholder" id="initPlaceholder">Enter a session ID and click Connect.</div>
 
-<script src="/app.js"></script>
-</body>
-</html>`;
+      <script src="/app.js?v=2"></script>
+      </body>
+      </html>`;
 
 const appJS = `/* AnyDesk Clone — WebRTC client logic (no timeout) */
 
@@ -328,6 +328,8 @@ function initHost() {
         ws.send(JSON.stringify({ type: 'join', sessionId: SESSION_ID, payload: { role: 'host' } }));
         updateStatus('connected', 'Hosting Session: ' + SESSION_ID);
         clientList.style.display = 'block';
+        // Send SDP offer after WS is connected (fixes race: onnegotiationneeded fires before WS open)
+        createOffer().catch(e => console.error('offer error', e));
       };
 
       ws.onmessage = (ev) => {

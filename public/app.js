@@ -80,6 +80,8 @@ function initHost() {
         ws.send(JSON.stringify({ type: 'join', sessionId: SESSION_ID, payload: { role: 'host' } }));
         updateStatus('connected', 'Hosting Session: ' + SESSION_ID);
         clientList.style.display = 'block';
+        // Send SDP offer after WS is connected (fixes race: onnegotiationneeded fires before WS open)
+        createOffer().catch(e => console.error('offer error', e));
       };
 
       ws.onmessage = (ev) => {
