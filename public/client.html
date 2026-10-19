@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=coverage">
+  <title>Connect — AnyDesk Clone</title>
+  <style>
+  :root{--bg:#0f0f1a;--card:#1a1a2e;--border:#2a2a3e;--text:#e0e0e0;--muted:#888;--accent:#00d4ff;--green:#00ff88;--red:#ff4757}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:1rem}
+  h1{font-size:1.3rem;margin-bottom:1rem}
+  .form-row{display:flex;gap:0.5rem;margin-bottom:1rem}
+  .form-row input{flex:1;padding:0.6rem 1rem;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:1rem;font-family:inherit}
+  .form-row input::placeholder{color:var(--muted)}
+  .btn{padding:0.6rem 1.2rem;border:none;border-radius:6px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .btn-connect{background:var(--accent);color:#000}
+  .btn-connect:hover{background:#00e0ff}
+  .btn:disabled{opacity:0.5;cursor:not-allowed}
+  .preview{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:1rem}
+  .preview video{width:100%;display:block}
+  .preview .placeholder{display:flex;align-items:center;justify-content:center;height:60vh;color:var(--muted);font-size:1.1rem}
+  .status-bar{display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem}
+  .status-dot{width:10px;height:10px;border-radius:50%}
+  .status-disconnected{background:var(--muted)}
+  .status-connecting{background:#ffa500;box-shadow:0 0 8px #ffa500}
+  .status-connected{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .controls{border:2px solid var(--border);border-radius:8px;padding:0.5rem;background:var(--card);margin-bottom:1rem;cursor:crosshair}
+  .controls video{width:100%;opacity:0.3}
+  .info{color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem}
+  /* Mobile / Android */
+  @media (max-width: 768px) {
+    body{padding:0.5rem}
+    h1{font-size:1.1rem}
+    .form-row{flex-direction:column}
+    .btn{padding:0.8rem;font-size:1rem}
+    .controls{border:2px solid var(--green);margin:0;position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0}
+    .controls video{height:100%;object-fit:contain}
+    .info{margin-top:4rem}
+    .preview,.placeholder{display:none}
+  }
+  </style>
+</head>
+<body>
+  <h1>🎮 Connect to Remote Session</h1>
+  <div class="status-bar">
+    <span class="status-dot status-disconnected" id="statusDot"></span>
+    <span id="statusText">Enter a session ID to connect</span>
+  </div>
+
+  <div class="form-row">
+    <input type="text" id="sessionId" placeholder="Enter session ID (e.g., a1b2c3d4)" maxlength="20">
+    <button class="btn btn-connect" id="connectBtn" onclick="connectToSession()">Connect</button>
+  </div>
+
+  <div class="info">Control the remote computer by moving your mouse and typing inside the red frame below.</div>
+
+  <div class="controls" id="controls" style="display:none">
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <div class="preview" id="previewContainer" style="display:none">
+    <video id="preview" autoplay playsinline></video>
+    <div class="placeholder" id="placeholder" style="display:none">Connecting to remote session…</div>
+  </div>
+
+  <div class="placeholder" id="initPlaceholder">Enter a session ID and click Connect.</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

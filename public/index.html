@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnyDesk Clone — Remote Desktop Without Timeout</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --border: #2a2a3e;
+      --text: #e0e0e0;
+      --muted: #888;
+      --accent: #00d4ff;
+      --green: #00ff88;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    .container { max-width: 900px; width: 100%; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 1.1rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    .btn {
+      display: block; width: 100%; padding: 0.8rem 1.2rem;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-host { background: var(--green); color: #000; }
+    .btn-host:hover { background: #00ff77; transform: translateY(-1px); }
+    .btn-client { background: var(--accent); color: #000; }
+    .btn-client:hover { background: #00e0ff; transform: translateY(-1px); }
+    .feature { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+    .feature-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .feature-text { color: var(--muted); font-size: 0.9rem; line-height: 1.4; }
+    .badge {
+      display: inline-block; background: #442; color: #ff6b6b;
+      padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .badge-free { background: #2a1a1a; color: #00ff88; }
+    footer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AnyDesk Clone</h1>
+    <p class="subtitle">Remote desktop — no free plan timeout, no session limits</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin-bottom:1rem;">Host a Computer</h3>
+        <p class="feature-text" style="margin-bottom:1rem;">Share your screen and let others control it remotely.</p>
+        <button class="btn btn-host" onclick="location.href='/host.html'">Start Hosting</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:1rem;">View / Control</h3>
+        <p class="feature-text" style="margin-bottom:1rem;">Enter a session ID to connect to a remote computer.</p>
+        <button class="btn btn-client" onclick="location.href='/client.html'">Connect to Session</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem;">Features <span class="badge-free">No Timeout</span></h3>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <div class="feature-text">Viewer bisa pakai Android/iOS (touch support)</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎬</div>
+        <div class="feature-text">Full HD screen sharing via WebRTC P2P</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🖱️</div>
+        <div class="feature-text">Real-time mouse & keyboard control</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-text">End-to-end encrypted WebRTC connection</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text">Low latency — no session time limits</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🆓</div>
+        <div class="feature-text">Free & open source — no paid plans</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    AnyDesk Clone — built with WebRTC • No free plan timeout • Unlimited sessions
+  </footer>
+</body>
+</html>

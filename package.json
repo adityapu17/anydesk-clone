@@ -1,0 +1,14 @@
+{
+  "name": "anydesk-clone",
+  "version": "1.0.0",
+  "description": "WebRTC-based remote desktop - AnyDesk clone without free plan timeout",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host — AnyDesk Clone</title>
+  <style>
+    :root{--bg:#0f0f1a;--card:#1a1a2e;--border:#2a2a3e;--text:#e0e0e0;--muted:#888;--accent:#00d4ff;--green:#00ff88;--red:#ff4757}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:1.5rem}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    h1{font-size:1.3rem}
+    .session-id{font-family:'Courier New',monospace;background:var(--card);border:1px solid var(--border);padding:0.3rem 0.8rem;border-radius:6px;font-size:1.1rem;color:var(--accent)}
+    .status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+    .status-waiting{background:var(--muted)}
+    .status-connected{background:var(--green);box-shadow:0 0 8px var(--green)}
+    .status-ended{background:var(--red)}
+    .toolbar{display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+    .btn{padding:0.5rem 1rem;border:none;border-radius:6px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-start{background:var(--green);color:#000}
+    .btn-start:hover{background:#00ff77}
+    .btn-stop{background:var(--red);color:#fff}
+    .btn-stop:hover{background:#ff5263}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .preview{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+    .preview video{width:100%;display:block}
+    .preview .placeholder{display:flex;align-items:center;justify-content:center;height:40vh;color:var(--muted);font-size:1rem}
+    .info{color:var(--muted);font-size:0.85rem;margin-top:0.5rem}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1>🖥️ Host Mode — No Timeout</h1>
+    <span id="status"><span class="status-dot status-waiting"></span>Waiting to share…</span>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-start" id="startBtn" onclick="startSharing()">Start Screen Share</button>
+    <button class="btn btn-stop" id="stopBtn" onclick="stopSharing()" disabled>Stop Sharing</button>
+    <span class="info">Session ID: <span class="session-id" id="sessionId"></span> Share this ID with viewers.</span>
+  </div>
+
+  <div class="toolbar" id="clientList" style="display:none">
+    <span class="info">Connected viewers: <span id="clientCount">0</span></span>
+  </div>
+
+  <div class="preview">
+    <video id="preview" autoplay muted playsinline></video>
+    <div class="placeholder" id="placeholder">Click "Start Screen Share" to begin sharing your screen.</div>
+  </div>
+
+  <div class="info">
+    Host: desktop browser (Chrome/Firefox/Edge). Viewer: bisa pakai Android/iOS.
+    This session has <strong>no timeout</strong> — it stays alive until you stop sharing.</div>
+  </div>
+
+<script src="/app.js"></script>
+</body>
+</html>
