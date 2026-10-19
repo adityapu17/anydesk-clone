@@ -4,3 +4,7 @@ npm-debug.log*
 .env
 .DS_Store
 Thumbs.db
+.wrangler/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
