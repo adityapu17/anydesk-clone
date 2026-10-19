@@ -46,14 +46,14 @@ Lalu buka `http://<IP-LAN>:3000/` di HP.
 
 ## Deploy ke Cloud (akses dari mana saja)
 
-```bash
-# Contoh deploy ke server VPS
-git clone <repo>
-cd anydesk-clone
-npm install
-node server.js
-# Expose port 3000
-```
+### Render.com (free, support WebSocket)
+1. Fork/push repo ke GitHub (sudah ada di `github.com/adityapu17/anydesk-clone`)
+2. Daftar di [render.com](https://render.com) → **New Web Service**
+3. Pilih repo → pilih branch `main` → **Create Web Service**
+4. Render akan deploy otomatis & kasih URL seperti `https://anydesk-clone.onrender.com`
+5. Buka URL di HP/PC browser!
+
+Config otomatis ada di `render.yaml`.
 
 ## File
 
