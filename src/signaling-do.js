@@ -13,12 +13,12 @@ export class SignallingDO {
     const url = new URL(request.url);
 
     // WebSocket upgrade
-    if (request.headers.get('Upgrade') === 'websocket') {
-      const pair = new WebSocketPair();
-      const [server, client] = pair;
+        if (request.headers.get('Upgrade') === 'websocket') {
+          const pair = new WebSocketPair();
+          const [client, server] = pair;
 
-      // Accept immediately
-      server.accept();
+          // Accept immediately
+          server.accept();
 
       server.addEventListener('message', (event) => {
         try {
