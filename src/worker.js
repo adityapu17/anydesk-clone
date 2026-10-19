@@ -312,14 +312,12 @@ function initHost() {
 
       display.getTracks().forEach(track => pc.addTrack(track, display));
 
+      // Create offer AFTER tracks added, but only send when WS opens.
+      // onnegotiationneeded fires before WS is ready — disabled to prevent early send
       pc.onicecandidate = (e) => {
         if (e.candidate && ws.readyState === ws.OPEN) {
           ws.send(JSON.stringify({ type: 'signal', sessionId: SESSION_ID, payload: { ice: e.candidate } }));
         }
-      };
-
-      pc.onnegotiationneeded = async () => {
-        try { await createOffer(); } catch (e) { console.error('negotiation error', e); }
       };
 
       display.getVideoTracks()[0].onended = () => stopSharing();
@@ -602,6 +600,8 @@ function initClient() {
     connectBtn.disabled = false;
     sessionIdInput.disabled = false;
   }
+
+  connectBtn.onclick = connectToSession;
 
   sessionIdInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') connectToSession();
