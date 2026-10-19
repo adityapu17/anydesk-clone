@@ -7,8 +7,11 @@ function generateSessionId() {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-function createWebSocket() {
-  const ws = new WebSocket(WS_URL);
+function createWebSocket(sessionId) {
+  const wsUrl = sessionId
+    ? WS_URL + '/signal?session=' + sessionId
+    : WS_URL;
+  const ws = new WebSocket(wsUrl);
   ws.onopen = () => console.log('[signal] WebSocket connected');
   ws.onerror = (e) => console.error('[signal] WebSocket error', e);
   ws.onclose = () => console.log('[signal] WebSocket disconnected');
@@ -56,8 +59,8 @@ function initHost() {
 
       preview.srcObject = display;
       placeholder.classList.add('hidden');
-      ws = createWebSocket();
-      pc = new RTCPeerConnection(iceConfig);
+      ws = createWebSocket(SESSION_ID);
+            pc = new RTCPeerConnection(iceConfig);
 
       display.getTracks().forEach(track => pc.addTrack(track, display));
 
@@ -216,9 +219,9 @@ function initClient() {
     initPlaceholder.style.display = 'none';
     previewContainer.style.display = 'block';
 
-    ws = createWebSocket();
+    ws = createWebSocket(currentSessionId);
 
-    ws.onopen = () => {
+        ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'join', sessionId: currentSessionId, payload: { role: 'client' } }));
     };
 

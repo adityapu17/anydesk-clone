@@ -1,0 +1,20 @@
+name = "anydesk-clone"
+compatibility_date = "2024-10-22"
+main = "src/worker.js"
+
+# Durable Object for WebSocket signaling
+[[durable_objects]]
+name = "SIGNALLING_DO"
+class_name = "SignallingDO"
+
+# Durable Object migration (needed for binding)
+[[migrations]]
+tag = "v1"
+new_classes = ["SignallingDO"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# For local dev: wrangler dev --local
+[env.production]
+vars = { ENVIRONMENT = "production" }

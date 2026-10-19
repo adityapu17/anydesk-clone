@@ -17,6 +17,11 @@ app.get('/', (req, res) => {
 const sessions = new Map();
 
 wss.on('connection', (ws, req) => {
+  // Parse session ID from URL query: /signal?session=ABC123
+  const url = new URL(req.url, 'http://' + req.headers.host);
+  ws.sessionId = url.searchParams.get('session');
+  // Keep role assignment via 'join' message (for backward compat)
+
   ws.on('message', (data) => {
     let msg;
     try { msg = JSON.parse(data); } catch { return; }
@@ -24,15 +29,16 @@ wss.on('connection', (ws, req) => {
     const { type, sessionId, payload } = msg;
 
     if (type === 'join') {
-      ws.sessionId = sessionId;
+      // Use session ID from URL if available, fallback to message
+      if (!ws.sessionId) ws.sessionId = sessionId;
       ws.role = payload.role;
-      const existing = sessions.get(sessionId);
+      const existing = sessions.get(ws.sessionId);
 
       if (ws.role === 'host') {
-        sessions.set(sessionId, { host: ws, clients: new Set() });
-        ws.send(JSON.stringify({ type: 'session-created', sessionId }));
+        sessions.set(ws.sessionId, { host: ws, clients: new Set() });
+        ws.send(JSON.stringify({ type: 'session-created', sessionId: ws.sessionId }));
       } else if (ws.role === 'client') {
-        const session = sessions.get(sessionId);
+        const session = sessions.get(ws.sessionId);
         if (session) {
           session.clients.add(ws);
           ws.send(JSON.stringify({ type: 'joined' }));
@@ -45,9 +51,13 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
+    // Use ws.sessionId from URL for routing
+    const activeSessionId = ws.sessionId;
+    if (!activeSessionId) return;
+
     // Relay signaling messages
     if (type === 'signal') {
-      const session = sessions.get(sessionId);
+      const session = sessions.get(activeSessionId);
       if (!session) return;
 
       if (ws.role === 'host') {
@@ -65,7 +75,7 @@ wss.on('connection', (ws, req) => {
 
     // Relay input events from client to host
     if (type === 'input') {
-      const session = sessions.get(sessionId);
+      const session = sessions.get(activeSessionId);
       if (!session) return;
       if (session.host.readyState === session.host.OPEN) {
         session.host.send(JSON.stringify({ type: 'input', payload }));
