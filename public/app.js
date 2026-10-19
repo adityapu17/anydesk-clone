@@ -152,35 +152,68 @@ function initHost() {
   function handleRemoteInput(payload) {
     if (!payload || !payload.type) return;
 
+    // Visual remote cursor
+    let remoteCursorEl = document.getElementById('remoteCursor');
+
     if (payload.type === 'mousemove') {
-      document.dispatchEvent(new MouseEvent('mousemove', {
-        clientX: payload.cx, clientY: payload.cy, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) {
+        remoteCursorEl.style.left = payload.cx + 'px';
+        remoteCursorEl.style.top = payload.cy + 'px';
+        remoteCursorEl.style.display = 'block';
+        remoteCursorEl.classList.remove('active-click');
+      }
+      const el = document.elementFromPoint(payload.cx, payload.cy);
+      if (el) {
+        el.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: payload.cx, clientY: payload.cy, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'mousedown') {
-      document.dispatchEvent(new MouseEvent('mousedown', {
-        button: payload.button, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) {
+        remoteCursorEl.classList.add('active-click');
+        remoteCursorEl.style.display = 'block';
+        remoteCursorEl.style.left = (payload.cx || 0) + 'px';
+        remoteCursorEl.style.top = (payload.cy || 0) + 'px';
+      }
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.focus();
+        el.dispatchEvent(new MouseEvent('mousedown', {
+          button: payload.button, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'mouseup') {
-      document.dispatchEvent(new MouseEvent('mouseup', {
-        button: payload.button, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) remoteCursorEl.classList.remove('active-click');
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.dispatchEvent(new MouseEvent('mouseup', {
+          button: payload.button, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'click') {
-      document.dispatchEvent(new MouseEvent('click', {
-        button: payload.button, bubbles: true, cancelable: true,
-        clientX: payload.cx, clientY: payload.cy
-      }));
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.focus();
+        el.dispatchEvent(new MouseEvent('click', {
+          button: payload.button, bubbles: true, cancelable: true,
+          clientX: payload.cx, clientY: payload.cy, view: window
+        }));
+      }
     } else if (payload.type === 'keydown') {
       document.dispatchEvent(new KeyboardEvent('keydown', {
-        key: payload.key, code: payload.code, bubbles: true, cancelable: true
+        key: payload.key, code: payload.code, bubbles: true, cancelable: true, view: window
       }));
     } else if (payload.type === 'keyup') {
       document.dispatchEvent(new KeyboardEvent('keyup', {
-        key: payload.key, code: payload.code, bubbles: true, cancelable: true
+        key: payload.key, code: payload.code, bubbles: true, cancelable: true, view: window
       }));
     } else if (payload.type === 'wheel') {
-      document.dispatchEvent(new WheelEvent('wheel', {
-        deltaX: payload.deltaX, deltaY: payload.deltaY, bubbles: true, cancelable: true
-      }));
+      const el = document.elementFromPoint(payload.deltaX || 0, payload.deltaY || 0);
+      if (el) {
+        el.dispatchEvent(new WheelEvent('wheel', {
+          deltaX: payload.deltaX, deltaY: payload.deltaY, bubbles: true, cancelable: true, view: window
+        }));
+      }
     }
   }
 }
@@ -193,6 +226,8 @@ function initClient() {
   const remoteVideo = document.getElementById('remoteVideo');
   const previewContainer = document.getElementById('previewContainer');
   const controlsEl = document.getElementById('controls');
+  const remoteCursor = document.getElementById('remoteCursor');
+  const fsBtn = document.getElementById('fsBtn');
   const initPlaceholder = document.getElementById('initPlaceholder');
 
   let ws, pc, currentSessionId;
@@ -304,48 +339,86 @@ function initClient() {
   }
 
   if (controlsEl) {
-    controlsEl.style.touchAction = 'none';
-    controlsEl.addEventListener('mousemove', (e) => {
-      const rect = e.getBoundingClientRect();
-      sendInput({ type: 'mousemove', x: e.clientX - rect.left, y: e.clientY - rect.top, cx: e.clientX, cy: e.clientY });
-    });
-    controlsEl.addEventListener('mousedown', (e) => sendInput({ type: 'mousedown', button: e.button }));
-    controlsEl.addEventListener('mouseup', (e) => sendInput({ type: 'mouseup', button: e.button }));
-    controlsEl.addEventListener('click', (e) => sendInput({ type: 'click', button: e.button }));
-    controlsEl.addEventListener('keydown', (e) => sendInput({ type: 'keydown', key: e.key, code: e.code }));
-    controlsEl.addEventListener('keyup', (e) => sendInput({ type: 'keyup', key: e.key, code: e.code }));
-    controlsEl.addEventListener('wheel', (e) => sendInput({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY }));
+      controlsEl.style.touchAction = 'none';
 
-    // Touch support for Android / mobile viewers
-    controlsEl.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const touch = e.touches[0];
-      const cx = touch.clientX, cy = touch.clientY;
-      const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
-      sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
-      sendInput({ type: 'mousedown', button: 0, cx, cy });
-    }, { passive: false });
+      // Virtual cursor visual feedback (follows local mouse on controls area)
+      controlsEl.addEventListener('mousemove', (e) => {
+        const rect = e.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const relY = e.clientY - rect.top;
+        if (remoteCursor) {
+          remoteCursor.style.left = relX + 'px';
+          remoteCursor.style.top = relY + 'px';
+          remoteCursor.style.display = 'block';
+        }
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx: e.clientX, cy: e.clientY });
+      });
+      controlsEl.addEventListener('mouseleave', () => {
+        if (remoteCursor) remoteCursor.style.display = 'none';
+      });
+      controlsEl.addEventListener('mousedown', (e) => sendInput({ type: 'mousedown', button: e.button }));
+      controlsEl.addEventListener('mouseup', (e) => sendInput({ type: 'mouseup', button: e.button }));
+      controlsEl.addEventListener('click', (e) => sendInput({ type: 'click', button: e.button }));
+      controlsEl.addEventListener('keydown', (e) => sendInput({ type: 'keydown', key: e.key, code: e.code }));
+      controlsEl.addEventListener('keyup', (e) => sendInput({ type: 'keyup', key: e.key, code: e.code }));
+      controlsEl.addEventListener('wheel', (e) => sendInput({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY }));
 
-    controlsEl.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const touch = e.touches[0];
-      const cx = touch.clientX, cy = touch.clientY;
-      const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
-      sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
-    }, { passive: false });
+      // Fullscreen button
+      if (fsBtn) {
+        fsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (controlsEl.requestFullscreen) {
+            controlsEl.requestFullscreen();
+          } else if (controlsEl.webkitRequestFullscreen) {
+            controlsEl.webkitRequestFullscreen();
+          } else if (controlsEl.msRequestFullscreen) {
+            controlsEl.msRequestFullscreen();
+          }
+        });
+      }
 
-    controlsEl.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      sendInput({ type: 'mouseup', button: 0 });
-    }, { passive: false });
+      // Touch support for Android / mobile viewers
+      controlsEl.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const touch = e.touches[0];
+        const cx = touch.clientX, cy = touch.clientY;
+        const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
+        if (remoteCursor) {
+          remoteCursor.style.left = relX + 'px';
+          remoteCursor.style.top = relY + 'px';
+          remoteCursor.style.display = 'block';
+        }
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
+        sendInput({ type: 'mousedown', button: 0, cx, cy });
+      }, { passive: false });
 
-    controlsEl.addEventListener('touchcancel', (e) => {
-      e.preventDefault();
-      sendInput({ type: 'mouseup', button: 0 });
-    }, { passive: false });
-  }
+      controlsEl.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const touch = e.touches[0];
+        const cx = touch.clientX, cy = touch.clientY;
+        const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
+        if (remoteCursor) {
+          remoteCursor.style.left = relX + 'px';
+          remoteCursor.style.top = relY + 'px';
+          remoteCursor.style.display = 'block';
+        }
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
+      }, { passive: false });
+
+      controlsEl.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (remoteCursor) remoteCursor.style.display = 'none';
+        sendInput({ type: 'mouseup', button: 0 });
+      }, { passive: false });
+
+      controlsEl.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        if (remoteCursor) remoteCursor.style.display = 'none';
+        sendInput({ type: 'mouseup', button: 0 });
+      }, { passive: false });
+    }
 
   function endSession() {
     if (pc) { pc.close(); pc = null; }

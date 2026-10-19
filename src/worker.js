@@ -143,6 +143,8 @@ const hostHTML = `<!DOCTYPE html>
     .preview .placeholder{display:flex;align-items:center;justify-content:center;height:40vh;color:var(--muted);font-size:1rem}
     .info{color:var(--muted);font-size:0.85rem;margin-top:0.5rem}
     .hidden{display:none}
+    #remoteCursor{position:fixed;top:0;left:0;width:20px;height:20px;border-radius:50%;border:2px solid var(--green);pointer-events:none;z-index:9999;display:none;box-shadow:0 0 8px var(--green)}
+    #remoteCursor.active-click{width:16px;height:16px;border:3px solid var(--green);background:rgba(0,255,136,0.3)}
   </style>
 </head>
 <body>
@@ -152,8 +154,8 @@ const hostHTML = `<!DOCTYPE html>
   </div>
 
   <div class="toolbar">
-    <button class="btn btn-start" id="startBtn" onclick="startSharing()">Start Screen Share</button>
-    <button class="btn btn-stop" id="stopBtn" onclick="stopSharing()" disabled>Stop Sharing</button>
+    <button class="btn btn-start" id="startBtn">Start Screen Share</button>
+    <button class="btn btn-stop" id="stopBtn" disabled>Stop Sharing</button>
     <span class="info">Session ID: <span class="session-id" id="sessionId"></span> Share this ID with viewers.</span>
   </div>
 
@@ -165,6 +167,8 @@ const hostHTML = `<!DOCTYPE html>
     <video id="preview" autoplay muted playsinline></video>
     <div class="placeholder" id="placeholder">Click "Start Screen Share" to begin sharing your screen.</div>
   </div>
+
+  <div id="remoteCursor"></div>
 
   <div class="info">
     Host: desktop browser (Chrome/Firefox/Edge). Viewer: bisa pakai Android/iOS.
@@ -201,9 +205,12 @@ const clientHTML = `<!DOCTYPE html>
   .status-disconnected{background:var(--muted)}
   .status-connecting{background:#ffa500;box-shadow:0 0 8px #ffa500}
   .status-connected{background:var(--green);box-shadow:0 0 8px var(--green)}
-  .controls{border:2px solid var(--border);border-radius:8px;padding:0.5rem;background:var(--card);margin-bottom:1rem;cursor:crosshair}
-  .controls video{width:100%;opacity:0.3}
-  .info{color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem}
+  .controls{border:2px solid var(--border);border-radius:8px;padding:0.5rem;background:transparent;margin-bottom:1rem;cursor:crosshair;position:relative}
+    .controls video{width:100%;display:block;opacity:0.9}
+    .controls .remote-cursor{position:absolute;pointer-events:none;z-index:10;width:24px;height:24px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="2"><path d="M5 5l10 10M15 5l-10 10"/></svg>') center/contain no-repeat;transform:translate(-2px,-2px);display:none}
+    .controls .fs-btn{position:absolute;top:8px;right:8px;z-index:20;padding:6px 10px;border:none;border-radius:4px;background:rgba(0,0,0,0.6);color:white;font-size:12px;cursor:pointer}
+    .controls .fs-btn:hover{background:rgba(0,0,0,0.8)}
+    .info{color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem}
   /* Mobile / Android */
   @media (max-width: 768px) {
     body{padding:0.5rem}
@@ -211,7 +218,7 @@ const clientHTML = `<!DOCTYPE html>
     .form-row{flex-direction:column}
     .btn{padding:0.8rem;font-size:1rem}
     .controls{border:2px solid var(--green);margin:0;position:fixed;top:0;left:0;width:100vw;height:100vh;border-radius:0}
-    .controls video{height:100%;object-fit:contain}
+    .controls video{height:100%;object-fit:contain;opacity:0.9}
     .info{margin-top:4rem}
     .preview,.placeholder{display:none}
   }
@@ -232,8 +239,10 @@ const clientHTML = `<!DOCTYPE html>
   <div class="info">Control the remote computer by moving your mouse and typing inside the red frame below.</div>
 
   <div class="controls" id="controls" style="display:none">
-    <video id="remoteVideo" autoplay playsinline></video>
-  </div>
+      <video id="remoteVideo" autoplay playsinline></video>
+      <div class="remote-cursor" id="remoteCursor"></div>
+      <button class="fs-btn" id="fsBtn" title="Fullscreen">⛶</button>
+    </div>
 
   <div class="preview" id="previewContainer" style="display:none">
     <video id="preview" autoplay playsinline></video>
@@ -400,35 +409,68 @@ function initHost() {
   function handleRemoteInput(payload) {
     if (!payload || !payload.type) return;
 
+    // Visual remote cursor on host screen
+    let remoteCursorEl = document.getElementById('remoteCursor');
+
     if (payload.type === 'mousemove') {
-      document.dispatchEvent(new MouseEvent('mousemove', {
-        clientX: payload.cx, clientY: payload.cy, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) {
+        remoteCursorEl.style.left = payload.cx + 'px';
+        remoteCursorEl.style.top = payload.cy + 'px';
+        remoteCursorEl.style.display = 'block';
+        remoteCursorEl.classList.remove('active-click');
+      }
+      const el = document.elementFromPoint(payload.cx, payload.cy);
+      if (el) {
+        el.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: payload.cx, clientY: payload.cy, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'mousedown') {
-      document.dispatchEvent(new MouseEvent('mousedown', {
-        button: payload.button, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) {
+        remoteCursorEl.classList.add('active-click');
+        remoteCursorEl.style.display = 'block';
+        remoteCursorEl.style.left = (payload.cx || 0) + 'px';
+        remoteCursorEl.style.top = (payload.cy || 0) + 'px';
+      }
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.focus();
+        el.dispatchEvent(new MouseEvent('mousedown', {
+          button: payload.button, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'mouseup') {
-      document.dispatchEvent(new MouseEvent('mouseup', {
-        button: payload.button, bubbles: true, cancelable: true
-      }));
+      if (remoteCursorEl) remoteCursorEl.classList.remove('active-click');
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.dispatchEvent(new MouseEvent('mouseup', {
+          button: payload.button, bubbles: true, cancelable: true, view: window
+        }));
+      }
     } else if (payload.type === 'click') {
-      document.dispatchEvent(new MouseEvent('click', {
-        button: payload.button, bubbles: true, cancelable: true,
-        clientX: payload.cx, clientY: payload.cy
-      }));
+      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      if (el) {
+        el.focus();
+        el.dispatchEvent(new MouseEvent('click', {
+          button: payload.button, bubbles: true, cancelable: true,
+          clientX: payload.cx, clientY: payload.cy, view: window
+        }));
+      }
     } else if (payload.type === 'keydown') {
       document.dispatchEvent(new KeyboardEvent('keydown', {
-        key: payload.key, code: payload.code, bubbles: true, cancelable: true
+        key: payload.key, code: payload.code, bubbles: true, cancelable: true, view: window
       }));
     } else if (payload.type === 'keyup') {
       document.dispatchEvent(new KeyboardEvent('keyup', {
-        key: payload.key, code: payload.code, bubbles: true, cancelable: true
+        key: payload.key, code: payload.code, bubbles: true, cancelable: true, view: window
       }));
     } else if (payload.type === 'wheel') {
-      document.dispatchEvent(new WheelEvent('wheel', {
-        deltaX: payload.deltaX, deltaY: payload.deltaY, bubbles: true, cancelable: true
-      }));
+      const el = document.elementFromPoint(payload.deltaX || 0, payload.deltaY || 0);
+      if (el) {
+        el.dispatchEvent(new WheelEvent('wheel', {
+          deltaX: payload.deltaX, deltaY: payload.deltaY, bubbles: true, cancelable: true, view: window
+        }));
+      }
     }
   }
 }
@@ -439,9 +481,11 @@ function initClient() {
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const remoteVideo = document.getElementById('remoteVideo');
-  const previewContainer = document.getElementById('previewContainer');
-  const controlsEl = document.getElementById('controls');
-  const initPlaceholder = document.getElementById('initPlaceholder');
+    const previewContainer = document.getElementById('previewContainer');
+    const controlsEl = document.getElementById('controls');
+    const remoteCursor = document.getElementById('remoteCursor');
+    const fsBtn = document.getElementById('fsBtn');
+    const initPlaceholder = document.getElementById('initPlaceholder');
 
   let ws, pc, currentSessionId;
 

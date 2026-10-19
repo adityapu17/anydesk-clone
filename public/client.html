@@ -24,8 +24,13 @@
   .status-disconnected{background:var(--muted)}
   .status-connecting{background:#ffa500;box-shadow:0 0 8px #ffa500}
   .status-connected{background:var(--green);box-shadow:0 0 8px var(--green)}
-  .controls{border:2px solid var(--border);border-radius:8px;padding:0.5rem;background:var(--card);margin-bottom:1rem;cursor:crosshair}
-  .controls video{width:100%;opacity:0.3}
+  .controls{border:2px solid var(--border);border-radius:8px;padding:0.5rem;background:var(--card);margin-bottom:1rem;cursor:crosshair;position:relative}
+  .controls video{width:100%;opacity:0.85}
+  #remoteCursor{position:absolute;top:0;left:0;width:16px;height:16px;border-radius:50%;border:2px solid var(--accent);pointer-events:none;z-index:10;display:none;box-shadow:0 0 6px var(--accent)}
+  #fsBtn{position:absolute;top:0.5rem;right:0.5rem;background:rgba(15,15,26,0.8);border:1px solid var(--border);border-radius:4px;padding:0.4rem;cursor:pointer;color:var(--text);font-size:1rem;z-index:10}
+  .controls .remote-cursor{position:absolute;pointer-events:none;z-index:10;width:24px;height:24px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="2"><path d="M5 5l10 10M15 5l-10 10"/></svg>') center/contain no-repeat;transform:translate(-2px,-2px);display:none}
+  .controls .fs-btn{position:absolute;top:8px;right:8px;z-index:20;padding:6px 10px;border:none;border-radius:4px;background:rgba(0,0,0,0.6);color:white;font-size:12px;cursor:pointer}
+  .controls .fs-btn:hover{background:rgba(0,0,0,0.8)}
   .info{color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem}
   /* Mobile / Android */
   @media (max-width: 768px) {
@@ -56,6 +61,8 @@
 
   <div class="controls" id="controls" style="display:none">
     <video id="remoteVideo" autoplay playsinline></video>
+    <div class="remote-cursor" id="remoteCursor"></div>
+    <button class="fs-btn" id="fsBtn" title="Fullscreen">⛶</button>
   </div>
 
   <div class="preview" id="previewContainer" style="display:none">
