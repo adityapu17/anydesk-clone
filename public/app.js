@@ -78,14 +78,16 @@ function initHost() {
         ws.send(JSON.stringify({ type: 'join', sessionId: SESSION_ID, payload: { role: 'host' } }));
         updateStatus('connected', 'Hosting Session: ' + SESSION_ID);
         clientList.style.display = 'block';
-        // Send SDP offer after WS is connected (fixes race: onnegotiationneeded fires before WS open)
-        createOffer().catch(e => console.error('offer error', e));
       };
 
       ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data);
 
-        if (msg.type === 'client-joined') clientCountEl.textContent = msg.count;
+        if (msg.type === 'client-joined') {
+          clientCountEl.textContent = msg.count;
+          // Send SDP offer NOW that client is connected
+          createOffer().catch(e => console.error('offer error', e));
+        }
         if (msg.type === 'client-left') clientCountEl.textContent = msg.count;
         if (msg.type === 'input') handleRemoteInput(msg.payload);
 
