@@ -21,7 +21,11 @@ export class SignallingDO {
       server.accept();
 
       server.addEventListener('message', (event) => {
-        this._handleMessage(server, event.data);
+        try {
+          this._handleMessage(server, event.data);
+        } catch (err) {
+          console.error('[DO] _handleMessage error:', err);
+        }
       });
 
       server.addEventListener('close', () => {
@@ -29,7 +33,7 @@ export class SignallingDO {
       });
 
       server.addEventListener('error', (err) => {
-        console.error('[DO] WS error', err);
+        console.error('[DO] WS error:', err);
       });
 
       return new Response(null, { status: 101, webSocket: client });
@@ -54,6 +58,9 @@ export class SignallingDO {
 
       if (payload.role === 'host') {
         this.host = ws;
+        // Confirm session created
+        ws.send(JSON.stringify({ type: 'session-created', sessionId }));
+        console.log('[DO] Host joined:', sessionId);
       } else if (payload.role === 'client') {
         this.clients.add(ws);
         // Notify client
@@ -65,6 +72,7 @@ export class SignallingDO {
             count: this.clients.size 
           }));
         }
+        console.log('[DO] Client joined:', sessionId, 'clients:', this.clients.size);
       }
       return;
     }
@@ -90,10 +98,6 @@ export class SignallingDO {
         this.host.send(JSON.stringify({ type: 'input', payload }));
       }
     }
-
-    // Handle offer from host when client just joined
-    // (Host sends offer via WebRTC negotiation, but client may have joined late)
-    // The offer/answer flow is handled through the signal relay above.
   }
 
   _cleanup(ws) {
@@ -108,6 +112,7 @@ export class SignallingDO {
         }
       });
       this.clients.clear();
+      console.log('[DO] Host disconnected:', sessionId);
     } else if (role === 'client') {
       this.clients.delete(ws);
       if (this.host && this.host.readyState === 1) {
@@ -116,6 +121,7 @@ export class SignallingDO {
           count: this.clients.size 
         }));
       }
+      console.log('[DO] Client left:', sessionId, 'remaining:', this.clients.size);
     }
   }
 
