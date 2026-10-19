@@ -67,17 +67,17 @@ const indexHTML = `<!DOCTYPE html>
     <p class="subtitle">Remote desktop — no free plan timeout, no session limits</p>
 
     <div class="grid">
-      <div class="card">
-        <h3 style="margin-bottom:1rem;">Host a Computer</h3>
-        <p class="feature-text" style="margin-bottom:1rem;">Share your screen and let others control it remotely.</p>
-        <button class="btn btn-host" onclick="location.href='/host.html'">Start Hosting</button>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:1rem;">View / Control</h3>
-        <p class="feature-text" style="margin-bottom:1rem;">Enter a session ID to connect to a remote computer.</p>
-        <button class="btn btn-client" onclick="location.href='/client.html'">Connect to Session</button>
-      </div>
-    </div>
+          <div class="card">
+            <h3 style="margin-bottom:1rem;">Host a Computer</h3>
+            <p class="feature-text" style="margin-bottom:1rem;">Share your screen and let others control it remotely.</p>
+            <a href="/host.html" class="btn btn-host">Start Hosting</a>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:1rem;">View / Control</h3>
+            <p class="feature-text" style="margin-bottom:1rem;">Enter a session ID to connect to a remote computer.</p>
+            <a href="/client.html" class="btn btn-client">Connect to Session</a>
+          </div>
+        </div>
 
     <div class="card">
       <h3 style="margin-bottom:1rem;">Features <span class="badge-free">No Timeout</span></h3>
