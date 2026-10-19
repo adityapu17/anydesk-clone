@@ -291,6 +291,9 @@ function initClient() {
     };
   };
 
+  // Assign onclick EARLY before controlsEl block (CSP blocks inline onclick)
+  connectBtn.onclick = connectToSession;
+
   function sendInput(event) {
     if (!ws || ws.readyState !== ws.OPEN) return;
     ws.send(JSON.stringify({
@@ -352,8 +355,6 @@ function initClient() {
     connectBtn.disabled = false;
     sessionIdInput.disabled = false;
   }
-
-  connectBtn.onclick = connectToSession;
 
   sessionIdInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') connectToSession();

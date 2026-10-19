@@ -226,7 +226,7 @@ const clientHTML = `<!DOCTYPE html>
 
   <div class="form-row">
     <input type="text" id="sessionId" placeholder="Enter session ID (e.g., a1b2c3d4)" maxlength="20">
-    <button class="btn btn-connect" id="connectBtn" onclick="connectToSession()">Connect</button>
+    <button class="btn btn-connect" id="connectBtn">Connect</button>
   </div>
 
   <div class="info">Control the remote computer by moving your mouse and typing inside the red frame below.</div>
@@ -548,6 +548,9 @@ function initClient() {
     }));
   }
 
+  // Assign onclick EARLY before controlsEl block (CSP blocks inline onclick)
+  connectBtn.onclick = connectToSession;
+
   if (controlsEl) {
     controlsEl.style.touchAction = 'none';
     controlsEl.addEventListener('mousemove', (e) => {
@@ -600,8 +603,6 @@ function initClient() {
     connectBtn.disabled = false;
     sessionIdInput.disabled = false;
   }
-
-  connectBtn.onclick = connectToSession;
 
   sessionIdInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') connectToSession();
