@@ -3,18 +3,26 @@ compatibility_date = "2024-10-22"
 main = "src/worker.js"
 
 # Durable Object for WebSocket signaling
-[[durable_objects]]
+[durable_objects]
+[[durable_objects.bindings]]
 name = "SIGNALLING_DO"
 class_name = "SignallingDO"
 
-# Durable Object migration (needed for binding)
-[[migrations]]
-tag = "v1"
-new_classes = ["SignallingDO"]
+# Export the Durable Object
+[exports.SignallingDO]
+type = "durable-object"
+storage = "sqlite"
+
+# Static file imports
+[[rules]]
+type = "Text"
+globs = ["public/**/*.html"]
+fallthrough = true
+
+[[rules]]
+type = "Data"
+globs = ["public/**/*.js"]
+fallthrough = true
 
 [vars]
 ENVIRONMENT = "production"
-
-# For local dev: wrangler dev --local
-[env.production]
-vars = { ENVIRONMENT = "production" }
