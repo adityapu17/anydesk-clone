@@ -403,19 +403,41 @@ function initClient() {
 
       // Fullscreen button
       if (fsBtn) {
-        fsBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (controlsEl.requestFullscreen) {
+        const toggleFullscreen = () => {
+          if (document.fullscreenElement === controlsEl) {
+            document.exitFullscreen();
+          } else if (controlsEl.requestFullscreen) {
             controlsEl.requestFullscreen();
           } else if (controlsEl.webkitRequestFullscreen) {
             controlsEl.webkitRequestFullscreen();
           } else if (controlsEl.msRequestFullscreen) {
             controlsEl.msRequestFullscreen();
           }
+        };
+
+        fsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          toggleFullscreen();
         });
+
+        // Handle fullscreen change to update button state
+        const handleFullscreenChange = () => {
+          const isFullscreen = document.fullscreenElement === controlsEl;
+          fsBtn.textContent = isFullscreen ? '⛶' : '⛶'; // Can change icon if needed
+          fsBtn.title = isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
       }
 
       // Touch support for Android / mobile viewers
+      // Track last touch position to maintain cursor position between swipes
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+
       controlsEl.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
@@ -423,6 +445,8 @@ function initClient() {
         const cx = touch.clientX, cy = touch.clientY;
         const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
         const nx = relX / rect.width, ny = relY / rect.height;
+        lastTouchX = relX;
+        lastTouchY = relY;
         if (remoteCursor) {
           remoteCursor.style.left = relX + 'px';
           remoteCursor.style.top = relY + 'px';
@@ -439,6 +463,8 @@ function initClient() {
         const cx = touch.clientX, cy = touch.clientY;
         const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
         const nx = relX / rect.width, ny = relY / rect.height;
+        lastTouchX = relX;
+        lastTouchY = relY;
         if (remoteCursor) {
           remoteCursor.style.left = relX + 'px';
           remoteCursor.style.top = relY + 'px';
@@ -449,13 +475,25 @@ function initClient() {
 
       controlsEl.addEventListener('touchend', (e) => {
         e.preventDefault();
-        if (remoteCursor) remoteCursor.style.display = 'none';
+        const rect = e.currentTarget.getBoundingClientRect();
+        // Keep cursor at last position instead of hiding it
+        if (remoteCursor) {
+          remoteCursor.style.left = lastTouchX + 'px';
+          remoteCursor.style.top = lastTouchY + 'px';
+          remoteCursor.style.display = 'block';
+        }
+        // Send final position before mouseup
+        sendInput({ type: 'mousemove', x: lastTouchX, y: lastTouchY, cx: lastTouchX, cy: lastTouchY, nx: lastTouchX/rect.width, ny: lastTouchY/rect.height });
         sendInput({ type: 'mouseup', button: 0 });
       }, { passive: false });
 
       controlsEl.addEventListener('touchcancel', (e) => {
         e.preventDefault();
-        if (remoteCursor) remoteCursor.style.display = 'none';
+        if (remoteCursor) {
+          remoteCursor.style.left = lastTouchX + 'px';
+          remoteCursor.style.top = lastTouchY + 'px';
+          remoteCursor.style.display = 'block';
+        }
         sendInput({ type: 'mouseup', button: 0 });
       }, { passive: false });
     }
