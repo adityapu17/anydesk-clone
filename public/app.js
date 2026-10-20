@@ -154,30 +154,40 @@ function initHost() {
   function handleRemoteInput(payload) {
     if (!payload || !payload.type) return;
 
-    // Visual remote cursor
+    // Visual remote cursor on host screen
     let remoteCursorEl = document.getElementById('remoteCursor');
 
+    // Scale normalized coords to host viewport, fallback to absolute
+    const getCoords = (p) => {
+      if (p.nx !== undefined && p.ny !== undefined) {
+        return { x: p.nx * window.innerWidth, y: p.ny * window.innerHeight };
+      }
+      return { x: p.cx || 0, y: p.cy || 0 };
+    };
+
     if (payload.type === 'mousemove') {
+      const { x, y } = getCoords(payload);
       if (remoteCursorEl) {
-        remoteCursorEl.style.left = payload.cx + 'px';
-        remoteCursorEl.style.top = payload.cy + 'px';
+        remoteCursorEl.style.left = x + 'px';
+        remoteCursorEl.style.top = y + 'px';
         remoteCursorEl.style.display = 'block';
         remoteCursorEl.classList.remove('active-click');
       }
-      const el = document.elementFromPoint(payload.cx, payload.cy);
+      const el = document.elementFromPoint(x, y);
       if (el) {
         el.dispatchEvent(new MouseEvent('mousemove', {
-          clientX: payload.cx, clientY: payload.cy, bubbles: true, cancelable: true, view: window
+          clientX: x, clientY: y, bubbles: true, cancelable: true, view: window
         }));
       }
     } else if (payload.type === 'mousedown') {
+      const { x, y } = getCoords(payload);
       if (remoteCursorEl) {
         remoteCursorEl.classList.add('active-click');
         remoteCursorEl.style.display = 'block';
-        remoteCursorEl.style.left = (payload.cx || 0) + 'px';
-        remoteCursorEl.style.top = (payload.cy || 0) + 'px';
+        remoteCursorEl.style.left = x + 'px';
+        remoteCursorEl.style.top = y + 'px';
       }
-      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      const el = document.elementFromPoint(x, y);
       if (el) {
         el.focus();
         el.dispatchEvent(new MouseEvent('mousedown', {
@@ -186,19 +196,21 @@ function initHost() {
       }
     } else if (payload.type === 'mouseup') {
       if (remoteCursorEl) remoteCursorEl.classList.remove('active-click');
-      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      const { x, y } = getCoords(payload);
+      const el = document.elementFromPoint(x, y);
       if (el) {
         el.dispatchEvent(new MouseEvent('mouseup', {
           button: payload.button, bubbles: true, cancelable: true, view: window
         }));
       }
     } else if (payload.type === 'click') {
-      const el = document.elementFromPoint(payload.cx || 0, payload.cy || 0);
+      const { x, y } = getCoords(payload);
+      const el = document.elementFromPoint(x, y);
       if (el) {
         el.focus();
         el.dispatchEvent(new MouseEvent('click', {
           button: payload.button, bubbles: true, cancelable: true,
-          clientX: payload.cx, clientY: payload.cy, view: window
+          clientX: x, clientY: y, view: window
         }));
       }
     } else if (payload.type === 'keydown') {
@@ -210,7 +222,8 @@ function initHost() {
         key: payload.key, code: payload.code, bubbles: true, cancelable: true, view: window
       }));
     } else if (payload.type === 'wheel') {
-      const el = document.elementFromPoint(payload.deltaX || 0, payload.deltaY || 0);
+      const { x, y } = getCoords(payload);
+      const el = document.elementFromPoint(x, y);
       if (el) {
         el.dispatchEvent(new WheelEvent('wheel', {
           deltaX: payload.deltaX, deltaY: payload.deltaY, bubbles: true, cancelable: true, view: window
@@ -345,22 +358,45 @@ function initClient() {
 
       // Virtual cursor visual feedback (follows local mouse on controls area)
       controlsEl.addEventListener('mousemove', (e) => {
-        const rect = e.getBoundingClientRect();
+        const rect = e.currentTarget.getBoundingClientRect();
         const relX = e.clientX - rect.left;
         const relY = e.clientY - rect.top;
+        const nx = relX / rect.width;
+        const ny = relY / rect.height;
         if (remoteCursor) {
           remoteCursor.style.left = relX + 'px';
           remoteCursor.style.top = relY + 'px';
           remoteCursor.style.display = 'block';
         }
-        sendInput({ type: 'mousemove', x: relX, y: relY, cx: e.clientX, cy: e.clientY });
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx: e.clientX, cy: e.clientY, nx, ny });
       });
       controlsEl.addEventListener('mouseleave', () => {
         if (remoteCursor) remoteCursor.style.display = 'none';
       });
-      controlsEl.addEventListener('mousedown', (e) => sendInput({ type: 'mousedown', button: e.button }));
-      controlsEl.addEventListener('mouseup', (e) => sendInput({ type: 'mouseup', button: e.button }));
-      controlsEl.addEventListener('click', (e) => sendInput({ type: 'click', button: e.button }));
+      controlsEl.addEventListener('mousedown', (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const relY = e.clientY - rect.top;
+        const nx = relX / rect.width;
+        const ny = relY / rect.height;
+        sendInput({ type: 'mousedown', button: e.button, cx: e.clientX, cy: e.clientY, nx, ny });
+      });
+      controlsEl.addEventListener('mouseup', (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const relY = e.clientY - rect.top;
+        const nx = relX / rect.width;
+        const ny = relY / rect.height;
+        sendInput({ type: 'mouseup', button: e.button, cx: e.clientX, cy: e.clientY, nx, ny });
+      });
+      controlsEl.addEventListener('click', (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const relY = e.clientY - rect.top;
+        const nx = relX / rect.width;
+        const ny = relY / rect.height;
+        sendInput({ type: 'click', button: e.button, cx: e.clientX, cy: e.clientY, nx, ny });
+      });
       controlsEl.addEventListener('keydown', (e) => sendInput({ type: 'keydown', key: e.key, code: e.code }));
       controlsEl.addEventListener('keyup', (e) => sendInput({ type: 'keyup', key: e.key, code: e.code }));
       controlsEl.addEventListener('wheel', (e) => sendInput({ type: 'wheel', deltaX: e.deltaX, deltaY: e.deltaY }));
@@ -386,13 +422,14 @@ function initClient() {
         const touch = e.touches[0];
         const cx = touch.clientX, cy = touch.clientY;
         const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
+        const nx = relX / rect.width, ny = relY / rect.height;
         if (remoteCursor) {
           remoteCursor.style.left = relX + 'px';
           remoteCursor.style.top = relY + 'px';
           remoteCursor.style.display = 'block';
         }
-        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
-        sendInput({ type: 'mousedown', button: 0, cx, cy });
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy, nx, ny });
+        sendInput({ type: 'mousedown', button: 0, cx, cy, nx, ny });
       }, { passive: false });
 
       controlsEl.addEventListener('touchmove', (e) => {
@@ -401,12 +438,13 @@ function initClient() {
         const touch = e.touches[0];
         const cx = touch.clientX, cy = touch.clientY;
         const relX = touch.clientX - rect.left, relY = touch.clientY - rect.top;
+        const nx = relX / rect.width, ny = relY / rect.height;
         if (remoteCursor) {
           remoteCursor.style.left = relX + 'px';
           remoteCursor.style.top = relY + 'px';
           remoteCursor.style.display = 'block';
         }
-        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy });
+        sendInput({ type: 'mousemove', x: relX, y: relY, cx, cy, nx, ny });
       }, { passive: false });
 
       controlsEl.addEventListener('touchend', (e) => {
